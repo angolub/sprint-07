@@ -1,6 +1,9 @@
 import io.qameta.allure.Step;
 import io.restassured.response.Response;
 import model.order.Order;
+import model.order.OrderCreateResponse;
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -9,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
 
 @RunWith(Parameterized.class)
 public class OrderCreateTest extends OrderTestBase {
@@ -22,6 +24,8 @@ public class OrderCreateTest extends OrderTestBase {
     private final String deliveryDate;
     private final String comment;
     private final List<String> color;
+
+    private int track;
 
     public OrderCreateTest(
             String firstName,
@@ -100,13 +104,23 @@ public class OrderCreateTest extends OrderTestBase {
         String[] color = (this.color != null) ? this.color.toArray(new String[0]) : null;
         Order order = new Order(this.firstName, this.lastName, this.address, this.metroStation, this.phone, this.rentTime, this.deliveryDate, this.comment, color);
         Response response = sendPostRequestCreateOrder(order);
-        checkPositiveResponse(response);
+        checkStatusCodeResponse(response, 201);
+        OrderCreateResponse orderCreateResponse = response.body().as(OrderCreateResponse.class);
+        checkOrderCreateResponse(orderCreateResponse);
+        this.track = orderCreateResponse.getTrack();
     }
 
     @Step("Check positive response on create order")
-    public void checkPositiveResponse(Response response){
-        checkStatusCodeResponse(response, 201);
-        response.then()
-                .assertThat().body("track", is(greaterThan(0)));
+    public void checkOrderCreateResponse(OrderCreateResponse orderCreateResponse){
+        Assert.assertNotNull(orderCreateResponse);
+        Assert.assertThat(orderCreateResponse.getTrack(), greaterThan(0));
+    }
+
+    @After
+    public void teardown() {
+        if (this.track > 0) {
+            Response response = sendPutRequestCancelOrder(this.track);
+            checkStatusCodeResponse(response, 200);
+        }
     }
 }

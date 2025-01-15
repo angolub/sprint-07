@@ -14,10 +14,15 @@ public class OrderGetListTest extends  OrderTestBase{
         checkPositiveResponse(response);
     }
 
-    @Step("Check positive response on create order")
+    @Step("Check positive response on get list order")
     public void checkPositiveResponse(Response response){
         checkStatusCodeResponse(response, 200);
         OrderGetResponse orderGetResponse = response.body().as(OrderGetResponse.class);
+        checkOrderResponse(orderGetResponse);
+    }
+
+    @Step("Check positive response on get list order")
+    public void checkOrderResponse(OrderGetResponse orderGetResponse){
         Assert.assertNotNull(orderGetResponse);
         Assert.assertNotNull(orderGetResponse.getOrders());
         Assert.assertThat(orderGetResponse.getOrders().length, greaterThan(0));
